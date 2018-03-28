@@ -233,12 +233,9 @@ const ApplicationsMenuButton = new Lang.Class({
         let gicon = Gio.icon_new_for_string( Me.path + '/icons/appmenu.svg' );
         let logo = new St.Icon( { gicon: gicon, icon_size: ICON_SIZE } );
         this._iconBox.child = logo;
-        //this._iconBox.opacity = 207;
-        this.actor.connect('notify::hover',
-                Lang.bind(this, this._onHoverChanged));
 
-        let label = new St.Label({ text: " " });
-        this._box.add(label, { y_align: St.Align.MIDDLE, y_fill: false });
+        this._labelSpace = new St.Label({ text: " " });
+        this._box.add(this._labelSpace, { y_align: St.Align.MIDDLE, y_fill: false });
 
         this._label = new St.Label({ text: _("Applications") });
         this._box.add(this._label, { y_align: St.Align.MIDDLE, y_fill: false });
@@ -264,10 +261,6 @@ const ApplicationsMenuButton = new Lang.Class({
         Main.layoutManager.connect('startup-complete',
                                    Lang.bind(this, this._setKeybinding));
         this._setKeybinding();
-    },
-
-    _onHoverChanged: function(actor) {
-        //this._iconBox.opacity = actor.hover ? 255 : 207;
     },
 
     _setKeybinding: function() {
@@ -408,9 +401,11 @@ const ApplicationsMenuButton = new Lang.Class({
         }
 
         if ( this._settings.get_boolean(SETTINGS_SHOW_TEXT) ) {
+            this._labelSpace.show();
             this._label.show();
         }
         else {
+            this._labelSpace.hide();
             this._label.hide();
         }
     }
