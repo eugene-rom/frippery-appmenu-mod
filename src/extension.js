@@ -1,3 +1,5 @@
+/* global imports */
+
 // Copyright (C) 2011-2017 R M Yorston
 // Licence: GPLv2+
 
@@ -25,7 +27,7 @@ const _f = imports.gettext.domain('frippery-applications-menu').gettext;
 
 const SETTINGS_SHOW_ICON = "show-icon";
 const SETTINGS_SHOW_TEXT = "show-text";
-const SETTINGS_ENABLE_HOT_CORNER = "enable-hot-corner";
+const ICON_SIZE = 22;
 
 const ApplicationMenuItem = new Lang.Class({
     Name: 'ApplicationMenuItem',
@@ -44,22 +46,22 @@ const ApplicationMenuItem = new Lang.Class({
         let name = app.get_name();
 
         let matches = /^(OpenJDK Policy Tool) (.*)/.exec(name);
-        if ( matches && matches.length == 3 ) {
+        if ( matches && matches.length === 3 ) {
             name = matches[1] + "\n" + matches[2];
         }
 
         matches = /^(OpenJDK 8 Policy Tool) (.*)/.exec(name);
-        if ( matches && matches.length == 3 ) {
+        if ( matches && matches.length === 3 ) {
             name = matches[1] + "\n" + matches[2];
         }
 
         matches = /^(OpenJDK Monitoring & Management Console) (.*)/.exec(name);
-        if ( matches && matches.length == 3 ) {
+        if ( matches && matches.length === 3 ) {
             name = "OpenJDK Console\n" + matches[2];
         }
 
         matches = /^(OpenJDK 8 Monitoring & Management Console) (.*)/.exec(name);
-        if ( matches && matches.length == 3 ) {
+        if ( matches && matches.length === 3 ) {
             name = "OpenJDK 8 Console\n" + matches[2];
         }
 
@@ -105,7 +107,7 @@ const ToggleSwitch = new Lang.Class({
     _onKeyPressEvent: function(actor, event) {
         let symbol = event.get_key_symbol();
 
-        if (symbol == Clutter.KEY_space || symbol == Clutter.KEY_Return) {
+        if (symbol === Clutter.KEY_space || symbol === Clutter.KEY_Return) {
             this.toggle();
             return true;
         }
@@ -183,18 +185,6 @@ const ApplicationsMenuDialog = new Lang.Class({
         this.labelSwitch.actor.set_accessible_name(_f('Text'));
         layout.pack(this.labelSwitch.actor, 1, 1);
 
-        label = new St.Label({ style_class: 'applications-menu-dialog-label',
-                        text: _f('Hot corner') });
-        layout.pack(label, 0, 2);
-
-        this.tlcSwitch = new ToggleSwitch(true);
-        this.tlcSwitch.actor.set_accessible_name(_f('Hot corner'));
-        this.tlcSwitch.toggle = Lang.bind(this.tlcSwitch, function() {
-                PopupMenu.Switch.prototype.toggle.call(this);
-                Main.layoutManager._setHotCornerState(this.getState());
-            });
-        layout.pack(this.tlcSwitch.actor, 1, 2);
-
         let buttons = [{ action: Lang.bind(this, this.close),
                          label:  _("Close"),
                          default: true }];
@@ -212,9 +202,6 @@ const ApplicationsMenuDialog = new Lang.Class({
         state = this.button._settings.get_boolean(SETTINGS_SHOW_TEXT);
         this.labelSwitch.setToggleState(state);
 
-        state = this.button._settings.get_boolean(SETTINGS_ENABLE_HOT_CORNER);
-        this.tlcSwitch.setToggleState(state);
-
         ModalDialog.ModalDialog.prototype.open.call(this,
                 global.get_current_time());
     },
@@ -226,9 +213,6 @@ const ApplicationsMenuDialog = new Lang.Class({
         state = this.labelSwitch.getState();
         this.button._settings.set_boolean(SETTINGS_SHOW_TEXT, state);
 
-        state = this.tlcSwitch.getState();
-        this.button._settings.set_boolean(SETTINGS_ENABLE_HOT_CORNER, state);
-
         ModalDialog.ModalDialog.prototype.close.call(this,
                 global.get_current_time());
     }
@@ -239,17 +223,17 @@ const ApplicationsMenuButton = new Lang.Class({
     Extends: PanelMenu.Button,
 
     _init: function() {
-        this.parent(1.0, _("Applications"), false);
+        this.parent(0.0, _("Applications"), false);
 
         this._box = new St.BoxLayout();
 
         this._iconBox = new St.Bin();
         this._box.add(this._iconBox, { y_align: St.Align.MIDDLE, y_fill: false });
 
-        let logo = new St.Icon({ icon_name: 'start-here',
-                                 style_class: 'applications-menu-button-icon'});
+        let gicon = Gio.icon_new_for_string( Me.path + '/icons/appmenu.svg' );
+        let logo = new St.Icon( { gicon: gicon, icon_size: ICON_SIZE } );
         this._iconBox.child = logo;
-        this._iconBox.opacity = 207;
+        //this._iconBox.opacity = 207;
         this.actor.connect('notify::hover',
                 Lang.bind(this, this._onHoverChanged));
 
@@ -271,13 +255,6 @@ const ApplicationsMenuButton = new Lang.Class({
         this._installChangedId = this._appSystem.connect('installed-changed',
                 Lang.bind(this, this._rebuildMenu));
 
-        // Since the hot corner uses stage coordinates, Clutter won't
-        // queue relayouts for us when the panel moves. Queue a relayout
-        // when that happens.  Stolen from apps-menu extension.
-        this._panelBoxChangedId = Main.layoutManager.connect(
-                'panel-box-changed', Lang.bind(this, function() {
-                                        container.queue_relayout();
-                                    }));
 
         this._buildMenu();
 
@@ -290,7 +267,7 @@ const ApplicationsMenuButton = new Lang.Class({
     },
 
     _onHoverChanged: function(actor) {
-        this._iconBox.opacity = actor.hover ? 255 : 207;
+        //this._iconBox.opacity = actor.hover ? 255 : 207;
     },
 
     _setKeybinding: function() {
@@ -303,13 +280,13 @@ const ApplicationsMenuButton = new Lang.Class({
     },
 
     _onEvent: function(actor, event) {
-        if ( event.type() == Clutter.EventType.BUTTON_RELEASE &&
-                event.get_button() == 3 ) {
+        if ( event.type() === Clutter.EventType.BUTTON_RELEASE &&
+                event.get_button() === 3 ) {
             return Clutter.EVENT_PROPAGATE;
         }
 
-        if ( event.type() == Clutter.EventType.BUTTON_PRESS &&
-                event.get_button() == 3 ) {
+        if ( event.type() === Clutter.EventType.BUTTON_PRESS &&
+                event.get_button() === 3 ) {
             return Clutter.EVENT_STOP;
         }
 
@@ -322,17 +299,12 @@ const ApplicationsMenuButton = new Lang.Class({
     },
 
     _onDestroy: function() {
-        if ( this._installChangedId != 0 ) {
+        if ( this._installChangedId !== 0 ) {
             this._appSystem.disconnect(this._installChangedId);
             this._installChangedId = 0;
         }
 
-        if ( this._panelBoxChangedId != 0 ) {
-            Main.layoutManager.disconnect(this._panelBoxChangedId);
-            this._panelBoxChangedId = 0;
-        }
-
-        if ( this._settingsChangedId != 0 ) {
+        if ( this._settingsChangedId !== 0 ) {
             this._settings.disconnect(this._settingsChangedId);
             this._settingsChangedId = 0;
         }
@@ -349,8 +321,8 @@ const ApplicationsMenuButton = new Lang.Class({
     _loadCategory: function(dir, appList) {
         let iter = dir.iter();
         let nextType;
-        while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
-            if (nextType == GMenu.TreeItemType.ENTRY) {
+        while ((nextType = iter.next()) !== GMenu.TreeItemType.INVALID) {
+            if (nextType === GMenu.TreeItemType.ENTRY) {
                 let entry = iter.get_entry();
                 let id;
                 try {
@@ -362,7 +334,7 @@ const ApplicationsMenuButton = new Lang.Class({
                 let app = this._appSystem.lookup_app(id);
                 if (app && app.get_app_info().should_show())
                     appList.push(app);
-            } else if (nextType == GMenu.TreeItemType.DIRECTORY) {
+            } else if (nextType === GMenu.TreeItemType.DIRECTORY) {
                 var itemDir = iter.get_directory();
                 if (!itemDir.get_is_nodisplay())
                     this._loadCategory(itemDir, appList);
@@ -380,14 +352,14 @@ const ApplicationsMenuButton = new Lang.Class({
         var nextType;
 
         var sections = [];
-        while ((nextType = iter.next()) != GMenu.TreeItemType.INVALID) {
-            if (nextType == GMenu.TreeItemType.DIRECTORY) {
+        while ((nextType = iter.next()) !== GMenu.TreeItemType.INVALID) {
+            if (nextType === GMenu.TreeItemType.DIRECTORY) {
                 var dir = iter.get_directory();
                 if (dir.get_is_nodisplay())
                     continue;
                 var appList = [];
                 this._loadCategory(dir, appList);
-                if ( appList.length != 0 ) {
+                if ( appList.length !== 0 ) {
                     sections.push({ name: dir.get_name(),
                                     apps: appList });
                 }
@@ -419,7 +391,7 @@ const ApplicationsMenuButton = new Lang.Class({
     },
 
     _showDialog: function(actor, event) {
-        if ( event.get_button() == 3 ) {
+        if ( event.get_button() === 3 ) {
             let applicationsMenuDialog = new ApplicationsMenuDialog(this);
             applicationsMenuDialog.open();
             return true;
@@ -441,9 +413,6 @@ const ApplicationsMenuButton = new Lang.Class({
         else {
             this._label.hide();
         }
-
-        let state = this._settings.get_boolean(SETTINGS_ENABLE_HOT_CORNER);
-        Main.layoutManager._setHotCornerState(state);
     }
 });
 
@@ -456,7 +425,7 @@ const ApplicationsMenuExtension = new Lang.Class({
 
     enable: function() {
         let mode = Main.sessionMode.currentMode;
-        if ( mode == 'classic' ) {
+        if ( mode === 'classic' ) {
             log('Frippery Applications Menu does not work in Classic mode');
             return;
         }
@@ -493,13 +462,12 @@ const ApplicationsMenuExtension = new Lang.Class({
         }
 
         this.applicationsButton = new ApplicationsMenuButton();
-        Main.panel.addToStatusArea('frippery-apps', this.applicationsButton,
-                0, 'left');
+        Main.panel.addToStatusArea('frippery-apps', this.applicationsButton);
     },
 
     disable: function() {
         let mode = Main.sessionMode.currentMode;
-        if ( mode == 'classic' ) {
+        if ( mode === 'classic' ) {
             return;
         }
 
